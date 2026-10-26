@@ -6,7 +6,7 @@ A server-rendered message board built for The Odin Project's [Mini Message Board
 
 [Open the Mini Message Board](https://odin-mini-message-board-01ct.onrender.com), hosted on Render.
 
-The current live version uses in-memory storage: messages reset when its server restarts. The PostgreSQL upgrade described below is available locally; the hosted database upgrade is pending.
+The live app stores messages in Neon PostgreSQL, independently of the Render application process.
 
 ## Features and stack
 
@@ -82,6 +82,6 @@ Tests use Unix-socket peer authentication as the current OS user; set `TEST_PGUS
 
 ## Storage and limitations
 
-In the PostgreSQL version, messages survive application restarts and are shared by processes connected to the same database. UUID URLs remain stable. Setup creates the table if missing without clearing existing data. Optional seeding is safe to repeat; neither runs automatically during startup.
+Messages are stored in PostgreSQL, survive application restarts, and are shared by processes connected to the same database. UUID URLs remain stable. Setup creates the table if missing without clearing existing data. Optional seeding is safe to repeat; neither runs automatically during startup.
 
-There are no accounts, editing, or deletion. The earlier in-memory live version has no durable message history to migrate; its existing messages are not automatically imported into PostgreSQL.
+There are no accounts, editing, or deletion. Messages from the earlier in-memory version were not automatically imported into PostgreSQL.
