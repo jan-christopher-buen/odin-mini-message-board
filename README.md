@@ -2,6 +2,10 @@
 
 A small, server-rendered message board built for [The Odin Project's Mini Message Board assignment](https://www.theodinproject.com/lessons/node-path-nodejs-mini-message-board). Read the board, share a message, and open individual message pages.
 
+## Live Demo
+
+[Open the Mini Message Board](https://odin-mini-message-board-01ct.onrender.com), hosted on Render.
+
 ## Features
 
 - Seeded messages with authors and readable UTC timestamps.
@@ -62,4 +66,4 @@ Tests use Node's built-in test runner and disposable server processes. Prettier 
 
 ## Storage and limitations
 
-Messages live only in an array in the index router. New messages disappear when the server restarts, and separate server processes have independent arrays. There is no database or persistent storage, and no accounts, editing, or deletion. This project is intended for local learning; deployment is outside its current scope.
+Messages live only in an array in the index router. New messages disappear when the server restarts, and separate server processes have independent arrays. There is no database or persistent storage, and no accounts, editing, or deletion.
