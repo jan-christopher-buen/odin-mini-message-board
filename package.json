@@ -1,0 +1,24 @@
+{
+  "name": "odin-mini-message-board",
+  "version": "1.0.0",
+  "private": true,
+  "description": "A server-rendered, in-memory message board for The Odin Project.",
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "start": "node app.js",
+    "dev": "node --watch app.js",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "test": "node --test"
+  },
+  "dependencies": {
+    "ejs": "^7.0.2",
+    "express": "^5.3.0"
+  },
+  "devDependencies": {
+    "prettier": "3.9.10"
+  }
+}

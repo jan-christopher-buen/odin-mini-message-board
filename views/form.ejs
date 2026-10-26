@@ -1,0 +1,34 @@
+<%- include('partials/head') %>
+<main id="main" class="container narrow">
+  <a class="back-link" href="/">← Back to the board</a>
+  <p class="eyebrow">ADD YOUR VOICE</p>
+  <h1>Leave a message.</h1>
+  <p class="lede">A few words can make someone's day.</p>
+  <% if (Object.keys(errors).length) { %>
+    <div class="error-summary" role="alert">
+      <h2>Please check your message</h2>
+      <ul>
+        <% for (const [field, error] of Object.entries(errors)) { %>
+          <li><a href="#<%= field %>"><%= error %></a></li>
+        <% } %>
+      </ul>
+    </div>
+  <% } %>
+  <form method="POST" action="/new" class="form-card">
+    <div class="field">
+      <label for="user">Author</label>
+      <p class="hint" id="user-hint">Your name, up to <%= limits.user %> characters.</p>
+      <input id="user" name="user" type="text" autocomplete="name" required maxlength="<%= limits.user %>" value="<%= values.user %>" aria-describedby="user-hint<%= errors.user ? ' user-error' : '' %>" <%= errors.user ? 'aria-invalid=true' : '' %>>
+      <% if (errors.user) { %><p class="field-error" id="user-error"><%= errors.user %></p><% } %>
+    </div>
+    <div class="field">
+      <label for="text">Message</label>
+      <p class="hint" id="text-hint">Plain text, up to <%= limits.text %> characters. Line breaks welcome.</p>
+      <textarea id="text" name="text" rows="7" required maxlength="<%= limits.text %>" aria-describedby="text-hint<%= errors.text ? ' text-error' : '' %>" <%= errors.text ? 'aria-invalid=true' : '' %>><%= values.text %></textarea>
+      <% if (errors.text) { %><p class="field-error" id="text-error"><%= errors.text %></p><% } %>
+    </div>
+    <p class="hint">Visible to everyone using this server. Please keep it kind.</p>
+    <button class="button" type="submit">Post message <span aria-hidden="true">↗</span></button>
+  </form>
+</main>
+<%- include('partials/footer') %>

@@ -1,0 +1,252 @@
+:root {
+  color-scheme: light;
+  --paper: #f7f5ef;
+  --ink: #253c33;
+  --muted: #5d695f;
+  --green: #205c46;
+  --line: #d5d9cf;
+  font-family:
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    'Segoe UI',
+    sans-serif;
+  color: var(--ink);
+  background: var(--paper);
+  line-height: 1.6;
+}
+* {
+  box-sizing: border-box;
+}
+body {
+  margin: 0;
+}
+a {
+  color: var(--green);
+  text-underline-offset: 0.22em;
+}
+a:hover {
+  text-decoration-thickness: 2px;
+}
+:focus-visible {
+  outline: 3px solid #aa480c;
+  outline-offset: 5px;
+}
+.container {
+  width: min(100% - 3rem, 960px);
+  margin-inline: auto;
+}
+.narrow {
+  max-width: 700px;
+}
+.site-header {
+  border-bottom: 1px solid var(--line);
+}
+.navigation {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  padding-block: 1.4rem;
+}
+.navigation a {
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+.brand {
+  text-decoration: none;
+  color: var(--ink);
+}
+.brand span {
+  color: #87988b;
+  padding-inline: 0.3rem;
+}
+.intro {
+  padding-block: 4.5rem 3.5rem;
+}
+.eyebrow {
+  font-size: 0.72rem;
+  font-weight: 750;
+  letter-spacing: 0.16em;
+  margin-block: 0 1rem;
+}
+h1 {
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: clamp(2.3rem, 6vw, 4rem);
+  font-weight: 400;
+  line-height: 1.1;
+  letter-spacing: -0.035em;
+  margin: 0 0 1.25rem;
+  overflow-wrap: anywhere;
+}
+h2 {
+  font-size: 1.15rem;
+  margin: 0;
+}
+.lede {
+  color: var(--muted);
+  margin-block: 0 1.8rem;
+  font-size: 1.05rem;
+}
+.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1.6rem;
+  padding: 0.8rem 1.25rem;
+  background: var(--green);
+  color: white;
+  border: 0;
+  border-radius: 6px;
+  font: inherit;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+}
+.button:hover {
+  background: #174634;
+}
+.section-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 1rem;
+  border-bottom: 1px solid var(--line);
+  padding-bottom: 0.9rem;
+  margin-bottom: 1.25rem;
+}
+.section-heading > span {
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+.messages {
+  display: grid;
+  gap: 1rem;
+}
+.message-card,
+.form-card {
+  padding: clamp(1.2rem, 4vw, 2rem);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: #fffefb;
+  min-width: 0;
+}
+.message-meta {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.6rem 1.5rem;
+  flex-wrap: wrap;
+}
+.author {
+  overflow-wrap: anywhere;
+  min-width: 0;
+}
+time {
+  color: var(--muted);
+  font-size: 0.8rem;
+}
+.message-text {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  margin-block: 1.1rem 1.5rem;
+}
+.open-link {
+  font-size: 0.85rem;
+  font-weight: 650;
+}
+.back-link {
+  display: inline-block;
+  margin-block: 2rem 2.5rem;
+  font-size: 0.9rem;
+}
+.detail-card {
+  margin-top: 2rem;
+}
+.detail-card .message-text {
+  margin-bottom: 0;
+}
+.field {
+  margin-bottom: 1.6rem;
+}
+label {
+  font-weight: 650;
+}
+.hint {
+  font-size: 0.85rem;
+  color: var(--muted);
+  margin-block: 0.35rem 0.6rem;
+}
+input,
+textarea {
+  width: 100%;
+  max-width: 100%;
+  border: 1px solid #7e8b80;
+  background: white;
+  border-radius: 5px;
+  padding: 0.7rem;
+  font: inherit;
+  color: var(--ink);
+}
+textarea {
+  resize: vertical;
+}
+[aria-invalid='true'] {
+  border-color: #9c3023;
+}
+.error-summary {
+  border-left: 4px solid #9c3023;
+  padding: 1rem;
+  background: #fff0eb;
+  margin-bottom: 1.5rem;
+}
+.error-summary a,
+.field-error {
+  color: #8a291e;
+}
+.field-error {
+  font-size: 0.9rem;
+  margin-block: 0.5rem 0;
+}
+.error-page {
+  padding-top: 4rem;
+}
+.site-footer {
+  border-top: 1px solid var(--line);
+  margin-top: 4rem;
+  padding-block: 1.5rem 2rem;
+  color: var(--muted);
+  font-size: 0.8rem;
+}
+.site-footer p {
+  margin-block: 0.25rem;
+}
+.sr-only,
+.skip-link:not(:focus) {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+.skip-link:focus {
+  display: block;
+  padding: 0.7rem;
+}
+@media (max-width: 480px) {
+  .container {
+    width: calc(100% - 2rem);
+  }
+  .navigation {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 0.4rem;
+    padding-block: 1rem;
+  }
+  .intro {
+    padding-block: 3rem 2.5rem;
+  }
+}

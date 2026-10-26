@@ -1,0 +1,27 @@
+<%- include('partials/head') %>
+<main id="main" class="container">
+  <section class="intro" aria-labelledby="board-title">
+    <p class="eyebrow">THE COMMUNITY BOARD</p>
+    <h1 id="board-title">Small messages.<br>Shared moments.</h1>
+    <p class="lede">Say hello, leave a thought, or share a little of your day.</p>
+    <a class="button" href="/new">Write a message <span aria-hidden="true">↗</span></a>
+  </section>
+  <section aria-labelledby="messages-title">
+    <div class="section-heading">
+      <h2 id="messages-title">On the board</h2>
+      <span><%= messages.length %> <%= messages.length === 1 ? 'message' : 'messages' %></span>
+    </div>
+    <div class="messages">
+      <% for (const message of messages) { %>
+        <article class="message-card">
+          <%- include('partials/message', { message }) %>
+          <a class="open-link" href="/messages/<%= message.id %>">Open<span class="sr-only"> message from <%= message.user %></span> <span aria-hidden="true">↗</span></a>
+        </article>
+      <% } %>
+      <% if (messages.length === 0) { %>
+        <p class="message-card">The board is quiet. <a href="/new">Leave the first message.</a></p>
+      <% } %>
+    </div>
+  </section>
+</main>
+<%- include('partials/footer') %>

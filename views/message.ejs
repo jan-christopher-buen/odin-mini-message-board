@@ -1,0 +1,10 @@
+<%- include('partials/head') %>
+<main id="main" class="container narrow">
+  <a class="back-link" href="/">← Back to the board</a>
+  <p class="eyebrow">A NOTE FROM THE BOARD</p>
+  <h1>Message details</h1>
+  <article class="message-card detail-card">
+    <%- include('partials/message', { message }) %>
+  </article>
+</main>
+<%- include('partials/footer') %>

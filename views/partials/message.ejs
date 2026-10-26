@@ -1,0 +1,5 @@
+<div class="message-meta">
+  <strong class="author"><%= message.user %></strong>
+  <time datetime="<%= message.added.toISOString() %>"><%= formatDate(message.added) %></time>
+</div>
+<p class="message-text"><%= message.text %></p>
