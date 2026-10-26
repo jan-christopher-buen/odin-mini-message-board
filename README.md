@@ -1,69 +1,87 @@
 # Mini Message Board
 
-A small, server-rendered message board built for [The Odin Project's Mini Message Board assignment](https://www.theodinproject.com/lessons/node-path-nodejs-mini-message-board). Read the board, share a message, and open individual message pages.
+A server-rendered message board built for The Odin Project's [Mini Message Board](https://www.theodinproject.com/lessons/node-path-nodejs-mini-message-board) and [Using PostgreSQL](https://www.theodinproject.com/lessons/nodejs-using-postgresql) assignments. Read the board, share a message, and open individual message pages.
 
 ## Live Demo
 
 [Open the Mini Message Board](https://odin-mini-message-board-01ct.onrender.com), hosted on Render.
 
-## Features
+The current live version uses in-memory storage: messages reset when its server restarts. The PostgreSQL upgrade described below is available locally; the hosted database upgrade is pending.
 
-- Seeded messages with authors and readable UTC timestamps.
+## Features and stack
+
 - Message creation with server-side validation and preserved input on errors.
-- Stable, unique message URLs and helpful 404 pages.
-- Escaped plain-text content with preserved line breaks.
-- Responsive layouts, labeled fields, keyboard focus indicators, and shared page navigation.
+- Stable UUID message URLs, readable UTC dates, and custom 404 pages.
+- Escaped plain text, preserved line breaks, responsive layouts, and keyboard focus indicators.
+- PostgreSQL persistence through parameterized queries and a shared `pg` Pool.
 
-## Stack
-
-Node.js, Express 5, EJS, and plain CSS. ES modules organize the application; Express renders HTML through EJS views and reusable partials. CSS and the SVG favicon are served through `express.static`. No frontend build step is needed.
+Built with Node.js, Express 5, EJS partials, PostgreSQL, `pg`, and plain CSS. Express renders the HTML and serves static assets; no frontend build step is required.
 
 ## Run locally
 
-Use Node.js 22 or newer and npm. Node.js 24 was used for development.
+Use Node.js 22.9 or newer, npm, and PostgreSQL. Development was verified with Node.js 24 and PostgreSQL 18.
 
 ```sh
 npm ci
+cp .env.example .env
+```
+
+Configure `.env` privately for your PostgreSQL role. The example uses Unix-socket peer authentication on Ubuntu, which does not need a password. Create the dedicated database **only if it does not already exist**:
+
+```sh
+createdb -h /var/run/postgresql odin_mini_message_board
+npm run db:setup
+npm run db:seed # optional sample messages
 npm start
 ```
 
-Open [http://localhost:3000](http://localhost:3000).
+Open [http://localhost:3000](http://localhost:3000). `npm run dev` watches JavaScript files and restarts the server. Use `PORT=4000 npm start` to change the HTTP port.
 
-For automatic restarts while editing JavaScript:
+| Setting        | Purpose                                                                           |
+| -------------- | --------------------------------------------------------------------------------- |
+| `PGHOST`       | Local database host or Unix socket directory                                      |
+| `PGPORT`       | PostgreSQL port, normally `5432`                                                  |
+| `PGUSER`       | Local database role                                                               |
+| `PGDATABASE`   | Dedicated database name                                                           |
+| `PGPASSWORD`   | Password for local TCP login, if needed                                           |
+| `DATABASE_URL` | Hosted PostgreSQL connection URL; takes precedence over local connection settings |
+| `PORT`         | HTTP port, default `3000`                                                         |
 
-```sh
-npm run dev
-```
+For local password login, set `PGHOST=localhost` and enter `PGPASSWORD` only in your ignored `.env` file. Never commit credentials.
 
-Set `PORT` to use a different port:
-
-```sh
-PORT=4000 npm start
-```
-
-Then open [http://localhost:4000](http://localhost:4000). No `.env` file is required.
+Hosted startup accepts provider-injected `DATABASE_URL` without a local `.env` file. URL connections require TLS and verify the server certificate and hostname (`sslmode=verify-full`). Initialize a confirmed hosted database with `scripts/setup.js` using its private environment configuration before deploying the app.
 
 ## Routes
 
-| Method | Path                   | Purpose                                                 |
-| ------ | ---------------------- | ------------------------------------------------------- |
-| GET    | `/`                    | List messages                                           |
-| GET    | `/new`                 | Show the message form                                   |
-| POST   | `/new`                 | Validate and add a message, then redirect with HTTP 303 |
-| GET    | `/messages/:messageId` | Show one message, or HTTP 404                           |
+| Method | Path                   | Purpose                                    |
+| ------ | ---------------------- | ------------------------------------------ |
+| GET    | `/`                    | List messages in creation order            |
+| GET    | `/new`                 | Show the message form                      |
+| POST   | `/new`                 | Validate, save, and redirect with HTTP 303 |
+| GET    | `/messages/:messageId` | Show one message, or HTTP 404              |
 
-Unknown routes return a custom HTTP 404 page. Authors must be 1–80 characters and messages 1–2,000 characters after trimming surrounding whitespace. Both fields must be single text values. Invalid submissions return HTTP 400 without creating a message.
+Authors must be 1–80 characters and messages 1–2,000 characters after trimming. Spaces, apostrophes, hyphens, and non-English names are supported. Invalid submissions return HTTP 400 without inserting data. Unexpected database failures return a generic HTTP 500 page.
 
 ## Development commands
 
 ```sh
-npm test
 npm run format
 npm run format:check
 ```
 
-Tests use Node's built-in test runner and disposable server processes. Prettier is installed locally at an exact version; EJS templates are formatted manually and excluded from Prettier.
+Prettier is pinned locally. EJS templates are formatted manually.
+
+Integration tests use a dedicated local database and create and remove only their own temporary schema. Create the test database once if absent, then run:
+
+```sh
+createdb -h /var/run/postgresql odin_mini_message_board_test
+npm test
+```
+
+Tests use Unix-socket peer authentication as the current OS user; set `TEST_PGUSER` if your local role differs. They do not use `DATABASE_URL` or the development database.
 
 ## Storage and limitations
 
-Messages live only in an array in the index router. New messages disappear when the server restarts, and separate server processes have independent arrays. There is no database or persistent storage, and no accounts, editing, or deletion.
+In the PostgreSQL version, messages survive application restarts and are shared by processes connected to the same database. UUID URLs remain stable. Setup creates the table if missing without clearing existing data. Optional seeding is safe to repeat; neither runs automatically during startup.
+
+There are no accounts, editing, or deletion. The earlier in-memory live version has no durable message history to migrate; its existing messages are not automatically imported into PostgreSQL.

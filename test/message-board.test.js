@@ -100,6 +100,13 @@ test('message board PostgreSQL behavior and process lifecycle', async (t) => {
     assert.equal(code, 0, `${name} succeeded`)
   }
   await runScript('setup')
+  await t.test('empty database starts without automatic seeding', async () => {
+    const empty = await startServer(t)
+    const html = await (await fetch(empty.url)).text()
+    assert.equal(messageLinks(html).length, 0)
+    assert.match(html, /The board is quiet/)
+    await empty.stop()
+  })
   await runScript('seed')
   await runScript('setup')
   await runScript('seed')
@@ -237,7 +244,11 @@ test('message board PostgreSQL behavior and process lifecycle', async (t) => {
   })
 
   await t.test('custom 404s and oversized request handling', async () => {
-    for (const path of ['/missing', '/messages/unknown-id']) {
+    for (const path of [
+      '/missing',
+      '/messages/unknown-id',
+      `/messages/${randomUUID()}`,
+    ]) {
       const response = await get(path)
       assert.equal(response.status, 404)
       assert.match(await response.text(), /Back to the board/)
@@ -303,6 +314,14 @@ test('message board PostgreSQL behavior and process lifecycle', async (t) => {
       const html = await response.text()
       assert.match(html, /We could not complete your request/)
       assert.ok(!/ECONNREFUSED|postgresql:|stack|password/i.test(html))
+      const write = await fetch(unavailable.url + '/new', {
+        method: 'POST',
+        body: new URLSearchParams({
+          user: 'QA',
+          text: 'Must not fall back to memory',
+        }),
+      })
+      assert.equal(write.status, 500)
       const missing = await fetch(unavailable.url + '/messages/not-a-uuid')
       assert.equal(missing.status, 404)
       await unavailable.stop()
