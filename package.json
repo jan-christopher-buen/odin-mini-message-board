@@ -2,21 +2,24 @@
   "name": "odin-mini-message-board",
   "version": "1.0.0",
   "private": true,
-  "description": "A server-rendered, in-memory message board for The Odin Project.",
+  "description": "A server-rendered PostgreSQL message board for The Odin Project.",
   "type": "module",
   "engines": {
-    "node": ">=22"
+    "node": ">=22.9"
   },
   "scripts": {
-    "start": "node app.js",
-    "dev": "node --watch app.js",
+    "start": "node --env-file-if-exists=.env app.js",
+    "dev": "node --env-file-if-exists=.env --watch app.js",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "test": "node --test"
+    "test": "node --test",
+    "db:setup": "node --env-file-if-exists=.env scripts/setup.js",
+    "db:seed": "node --env-file-if-exists=.env scripts/seed.js"
   },
   "dependencies": {
     "ejs": "^7.0.2",
-    "express": "^5.3.0"
+    "express": "^5.3.0",
+    "pg": "^8.23.1"
   },
   "devDependencies": {
     "prettier": "3.9.10"

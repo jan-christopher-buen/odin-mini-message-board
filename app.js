@@ -1,6 +1,7 @@
 import express from 'express'
 import { fileURLToPath } from 'node:url'
 import indexRouter from './routes/indexRouter.js'
+import pool from './db/pool.js'
 
 const app = express()
 app.set('view engine', 'ejs')
@@ -22,7 +23,7 @@ app.use((req, res) => {
   })
 })
 app.use((error, req, res, next) => {
-  console.error(error)
+  console.error('Request failed:', error.code ?? 'REQUEST_ERROR')
   if (res.headersSent) return next(error)
   // Body-parser failures are client errors, rather than unexpected server failures.
   const status = error.status >= 400 && error.status < 500 ? error.status : 500
@@ -44,6 +45,17 @@ server.on('listening', () => {
   )
 })
 server.on('error', (error) => {
-  console.error('Unable to start Mini Message Board:', error.message)
+  console.error(
+    'Unable to start Mini Message Board:',
+    error.code ?? 'STARTUP_ERROR',
+  )
   process.exitCode = 1
 })
+
+for (const signal of ['SIGINT', 'SIGTERM']) {
+  process.on(signal, () => {
+    server.close(async () => {
+      await pool.end()
+    })
+  })
+}

@@ -3,14 +3,27 @@ import { spawn } from 'node:child_process'
 import { once } from 'node:events'
 import { fileURLToPath } from 'node:url'
 import test from 'node:test'
+import pg from 'pg'
+import { randomUUID } from 'node:crypto'
+
+const testEnv = {
+  ...process.env,
+  DATABASE_URL: '',
+  PGHOST: '/var/run/postgresql',
+  PGPORT: '5432',
+  PGUSER: process.env.TEST_PGUSER ?? process.env.USER,
+  PGDATABASE: 'odin_mini_message_board_test',
+}
+const schema = 'qa_' + randomUUID().replaceAll('-', '')
+testEnv.PGOPTIONS = `-c search_path=${schema}`
 
 const appPath = fileURLToPath(new URL('../app.js', import.meta.url))
 
-async function startServer(t, port = '0') {
+async function startServer(t, port = '0', overrides = {}) {
   // A different cwd also checks that view and static paths use the module location.
   const child = spawn(process.execPath, [appPath], {
     cwd: '/tmp',
-    env: { ...process.env, PORT: port },
+    env: { ...testEnv, PORT: port, ...overrides },
     stdio: ['ignore', 'pipe', 'pipe'],
   })
   let output = ''
@@ -59,7 +72,42 @@ function messageLinks(html) {
 const escaped = (value) =>
   value.replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;')
 
-test('message board HTTP behavior and process lifecycle', async (t) => {
+test('message board PostgreSQL behavior and process lifecycle', async (t) => {
+  const admin = new pg.Pool({
+    host: '/var/run/postgresql',
+    user: testEnv.PGUSER,
+    database: 'odin_mini_message_board_test',
+  })
+  await admin.query(`CREATE SCHEMA ${schema}`)
+  const db = new pg.Pool({
+    host: '/var/run/postgresql',
+    user: testEnv.PGUSER,
+    database: 'odin_mini_message_board_test',
+    options: `-c search_path=${schema}`,
+  })
+  t.after(async () => {
+    await db.end()
+    await admin.query(`DROP SCHEMA ${schema} CASCADE`)
+    await admin.end()
+  })
+  const runScript = async (name) => {
+    const child = spawn(
+      process.execPath,
+      [fileURLToPath(new URL(`../scripts/${name}.js`, import.meta.url))],
+      { env: testEnv, stdio: 'pipe' },
+    )
+    const [code] = await once(child, 'exit')
+    assert.equal(code, 0, `${name} succeeded`)
+  }
+  await runScript('setup')
+  await runScript('seed')
+  await runScript('setup')
+  await runScript('seed')
+  assert.equal(
+    (await db.query('SELECT count(*)::int AS count FROM messages')).rows[0]
+      .count,
+    2,
+  )
   const server = await startServer(t)
   const get = (path) => fetch(server.url + path)
   const post = (
@@ -101,9 +149,11 @@ test('message board HTTP behavior and process lifecycle', async (t) => {
   await t.test(
     'valid post trims, redirects with 303, escapes and preserves newlines',
     async () => {
-      const user = 'QA <script>author</script>'
+      const user = "QA O'Brien-José <script>author</script>"
       const text =
-        'Line one\n<script>alert("test")</script>\n' + 'x'.repeat(1000)
+        'Line one\n<script>alert("test")</script>\n' +
+        "'); DROP TABLE messages; --" +
+        'x'.repeat(1000)
       const before = Date.now()
       const response = await post(
         new URLSearchParams({ user: `  ${user}  `, text: `  ${text}  ` }),
@@ -115,13 +165,17 @@ test('message board HTTP behavior and process lifecycle', async (t) => {
       assert.equal(links.length, 3)
       assert.deepEqual(links.slice(0, 2), seededLinks)
       createdLink = links.at(-1)
-      assert.ok(html.includes(escaped(user)))
-      assert.ok(html.includes(escaped(text).replaceAll('"', '&#34;')))
+      assert.ok(html.includes(escaped(user).replaceAll("'", '&#39;')))
+      assert.ok(
+        html.includes(
+          escaped(text).replaceAll('"', '&#34;').replaceAll("'", '&#39;'),
+        ),
+      )
       assert.ok(!html.includes('<script>'))
       const detail = await get(createdLink)
       assert.equal(detail.status, 200)
       const detailHtml = await detail.text()
-      assert.ok(detailHtml.includes(escaped(user)))
+      assert.ok(detailHtml.includes(escaped(user).replaceAll("'", '&#39;')))
       assert.ok(detailHtml.includes('Line one\n'))
       assert.ok(!detailHtml.includes('<script>'))
       const date = detailHtml.match(/datetime="([^"]+)"/)[1]
@@ -196,20 +250,62 @@ test('message board HTTP behavior and process lifecycle', async (t) => {
   })
 
   await t.test(
-    'separate processes and restarts have fresh messages',
+    'separate processes and restarts retain messages without automatic seeding',
     async () => {
       const other = await startServer(t)
       assert.equal(
         messageLinks(await (await fetch(other.url)).text()).length,
-        2,
+        4,
       )
       await other.stop()
       await server.stop()
       const restarted = await startServer(t)
       const html = await (await fetch(restarted.url)).text()
-      assert.equal(messageLinks(html).length, 2)
-      assert.ok(!html.includes('QA &lt;script&gt;'))
-      assert.equal((await fetch(restarted.url + createdLink)).status, 404)
+      assert.equal(messageLinks(html).length, 4)
+      assert.equal((await fetch(restarted.url + createdLink)).status, 200)
+    },
+  )
+  await t.test(
+    'schema and seed preserve existing messages and enforce constraints',
+    async () => {
+      await runScript('setup')
+      await runScript('seed')
+      assert.equal(
+        (await db.query('SELECT count(*)::int AS count FROM messages')).rows[0]
+          .count,
+        4,
+      )
+      for (const [author, text] of [
+        ['', 'valid'],
+        ['a'.repeat(81), 'valid'],
+        ['valid', ''],
+        ['valid', 'b'.repeat(2001)],
+        [null, 'valid'],
+      ]) {
+        await assert.rejects(
+          db.query(
+            'INSERT INTO messages (id, author, text) VALUES ($1, $2, $3)',
+            [randomUUID(), author, text],
+          ),
+        )
+      }
+    },
+  )
+  await t.test(
+    'database failures return generic 500 without leaking diagnostics',
+    async () => {
+      const unavailable = await startServer(t, '0', {
+        PGHOST: '127.0.0.1',
+        PGPORT: '1',
+      })
+      const response = await fetch(unavailable.url)
+      assert.equal(response.status, 500)
+      const html = await response.text()
+      assert.match(html, /We could not complete your request/)
+      assert.ok(!/ECONNREFUSED|postgresql:|stack|password/i.test(html))
+      const missing = await fetch(unavailable.url + '/messages/not-a-uuid')
+      assert.equal(missing.status, 404)
+      await unavailable.stop()
     },
   )
 })

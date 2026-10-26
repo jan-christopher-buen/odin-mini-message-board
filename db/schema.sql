@@ -1,0 +1,6 @@
+CREATE TABLE IF NOT EXISTS messages (
+  id UUID PRIMARY KEY,
+  author TEXT NOT NULL CHECK (char_length(btrim(author)) BETWEEN 1 AND 80),
+  text TEXT NOT NULL CHECK (char_length(btrim(text)) BETWEEN 1 AND 2000),
+  added TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+);

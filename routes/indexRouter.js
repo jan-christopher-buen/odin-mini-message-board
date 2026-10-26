@@ -1,24 +1,11 @@
 import { Router } from 'express'
-import { randomUUID } from 'node:crypto'
+import { getMessages, getMessage, createMessage } from '../db/queries.js'
 
-const messages = [
-  {
-    id: randomUUID(),
-    text: 'Hi there! Welcome to our little corner of the internet.',
-    user: 'Amando',
-    added: new Date(),
-  },
-  {
-    id: randomUUID(),
-    text: 'Hello World! Leave a thought, a greeting, or something that made you smile today.',
-    user: 'Charles',
-    added: new Date(),
-  },
-]
 const indexRouter = Router()
 const limits = { user: 80, text: 2000 }
 
-indexRouter.get('/', (req, res) => {
+indexRouter.get('/', async (req, res) => {
+  const messages = await getMessages()
   res.render('index', { title: 'Message board', messages })
 })
 indexRouter.get('/new', (req, res) => {
@@ -29,7 +16,7 @@ indexRouter.get('/new', (req, res) => {
     limits,
   })
 })
-indexRouter.post('/new', (req, res) => {
+indexRouter.post('/new', async (req, res) => {
   const values = {}
   const errors = {}
   for (const field of ['user', 'text']) {
@@ -47,23 +34,16 @@ indexRouter.post('/new', (req, res) => {
       .status(400)
       .render('form', { title: 'Check your message', values, errors, limits })
   }
-  messages.push({
-    id: randomUUID(),
-    text: values.text.trim(),
-    user: values.user.trim(),
-    added: new Date(),
-  })
+  await createMessage(values.user.trim(), values.text.trim())
   res.redirect(303, '/')
 })
-indexRouter.get('/messages/:messageId', (req, res) => {
-  const message = messages.find(
-    (message) => message.id === req.params.messageId,
-  )
+indexRouter.get('/messages/:messageId', async (req, res) => {
+  const message = await getMessage(req.params.messageId)
   if (!message) {
     return res.status(404).render('404', {
       title: 'Message not found',
       message:
-        'This message could not be found. It may have disappeared when the server restarted.',
+        'This message could not be found. Check the link or return to the board.',
     })
   }
   res.render('message', { title: `Message from ${message.user}`, message })
